@@ -2,7 +2,7 @@ from attendance import AttendanceTaker
 
 # Constraints
 
-base_url = "https://avalid.moodleplatform.com.uk/course/view.php?id=1111"
+base_url = "https://avalid.moodleplatform.com.uk"
 AT = AttendanceTaker(base_url)
 
 ##############################################
