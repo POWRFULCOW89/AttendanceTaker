@@ -58,7 +58,7 @@ AT.exit()
 You can debug the driver's current page with
 
 ```py
-print(AT.currentPage())
+AT.currentPage()
 ```
 ## TODO:
 
