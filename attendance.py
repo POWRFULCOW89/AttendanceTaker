@@ -37,13 +37,18 @@ class Singleton (type):
 
 # The actual singleton 
 class AttendanceTaker(metaclass=Singleton):
-    def __init__(self, base_url):
+    def __init__(self, base_url, logs=True):
         self.browser = webdriver.PhantomJS()
         self.base_url = base_url
         self.credentials = {}
+        self.logs = logs
 
     def currentPage(self):
         return "Current page: " + self.browser.title + " at: " + self.browser.current_url
+    
+    def logPage(self):
+        if self.logs:
+            return "Current page: {0} at: {1}".format(self.browser.title, self.browser.current_url)
 
     def isURLValid(self):
         if self.currentPage() == "Error":
@@ -61,7 +66,7 @@ class AttendanceTaker(metaclass=Singleton):
 
             # and assuring it
             self.isURLValid()
-            print(self.currentPage())
+            print(self.logPage())
 
             # Inputting credentials
             username = self.browser.find_element_by_id("username")
@@ -87,11 +92,13 @@ class AttendanceTaker(metaclass=Singleton):
         # Locate course. 
         self.browser.get("{0}/course/view.php?id={1}".format(self.base_url, courseId))
         self.isURLValid()
+        self.logPage()
 
     def navigateToAttendanceById(self, attendanceListId): # Currently unused.
         # Locate attendance list. 
         self.browser.get("{0}/mod/attendance/view.php?id={1}".format(self.base_url, attendanceListId))
         self.isURLValid()
+        self.logPage()
 
     def takeAttendance(self): # Assuming the webdriver is currently on a course page.
         try:
@@ -108,20 +115,27 @@ class AttendanceTaker(metaclass=Singleton):
 
             # Submit attendance     (CURRENTLY UNTESTED)
             for link in attendanceLinks:
-                # Navigating to the attendance page
-                self.browser.get(link.get_attribute("href"))
-                
-                self.isURLValid()
+                try:
+                    # Navigating to the attendance page
+                    self.browser.get(link.get_attribute("href"))
 
-                print(self.currentPage())
+                    self.isURLValid()
 
-                # Getting all possible links                 
-                attendanceBtns = self.browser.find_elements_by_class_name("form-check-input")
-                for btn in attendanceBtns:
-                    btn.click()     # Might lead to unstable behavior
+                    print(self.logPage())
 
-                # Clicking ok. We don't need a ref.
-                self.browser.find_element_by_name("submitbutton").click()
+                    # Click the link leading to checkout
+                    self.browser.find_elements_by_xpath("//*[contains(@href, 'attendance/attendance')]")[0].click()
+
+                    # Click the first radio input
+                    self.browser.find_elements_by_class_name("form-check-input")[0].click()
+
+                    # # Clicking ok. We don't need a ref.
+                    self.browser.find_element_by_name("submitbutton").click()
+
+                    print("Attendance taken at: " + self.browser.current_url)
+                except:
+                    # print("Error: No current attendance at: " + self.browser.current_url)
+                    pass
 
         except NoSuchElementException: #TODO: Remove double warning
             raise 
@@ -132,7 +146,7 @@ class AttendanceTaker(metaclass=Singleton):
             self.browser.find_element_by_id("action-menu-toggle-1").click()
             # Click the logout button. Can't click if the panel was hidden. TODO: Is there an URL for logging out?
             self.browser.find_element_by_xpath("//a[@data-title='logout,moodle']").click()
-            print(self.currentPage())
+            print(self.logPage())
 
         except NoSuchElementException:
             raise MoodleError
